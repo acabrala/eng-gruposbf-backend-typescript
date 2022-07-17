@@ -1,1 +1,1 @@
-# -ex-eng-gruposbf-backend-typescript
+# eng-gruposbf-backend-typescript
