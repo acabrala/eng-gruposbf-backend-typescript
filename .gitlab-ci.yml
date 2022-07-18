@@ -1,0 +1,12 @@
+image: somosphi/node:latest
+
+stages:
+  - test
+  - build
+  - publish
+  - deploy
+
+include:
+  - local: '/scripts/ci/test.yml'
+  - local: '/scripts/ci/kubernetes.yml'
+  - local: '/scripts/ci/documentation.yaml'

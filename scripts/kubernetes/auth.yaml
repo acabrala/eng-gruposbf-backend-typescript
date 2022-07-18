@@ -1,0 +1,13 @@
+apiVersion: 'authentication.istio.io/v1alpha1'
+kind: 'Policy'
+metadata:
+  name: '$CI_PROJECT_NAME-openconnect-policy'
+  namespace: $PROJECT_NAMESPACE-$CI_COMMIT_REF_NAME
+spec:
+  targets:
+    - name: '$CI_PROJECT_NAME'
+  origins:
+    - jwt:
+        issuer: '$OIDC_ISSUER'
+        jwksUri: '$OIDC_JWKS_URI'
+  principalBinding: USE_ORIGIN

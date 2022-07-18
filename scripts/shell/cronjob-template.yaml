@@ -1,0 +1,32 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: "$CI_PROJECT_NAME-$JOB_ALIAS"
+  namespace: "$CRONJOB_NAMESPACE-$CI_COMMIT_REF_NAME"
+spec:
+  schedule: "$JOB_SCHEDULE"
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 1
+  successfulJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      parallelism: 1
+      backoffLimit: 4
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: "false"
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: "$CI_PROJECT_NAME-$JOB_ALIAS"
+              image: "$DOCKER_IMAGE"
+              imagePullPolicy: Always
+              command:
+                - node
+                - ./dist/src/index.js
+                - $JOB_ALIAS
+              envFrom:
+                - secretRef:
+                    name: "$CI_PROJECT_NAME-$JOB_ALIAS"
+                    optional: false

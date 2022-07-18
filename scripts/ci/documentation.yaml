@@ -1,0 +1,42 @@
+.documentation: &Doc
+  stage: deploy
+  image: payly/node-gitlab-ci:latest
+  script:
+    - aws s3 rm $AWS_DOCUMENTATION_DNS --recursive
+    - aws s3 cp ./docs/ $AWS_DOCUMENTATION_DNS --recursive
+
+doc-dev:
+  <<: *Doc
+  variables:
+    AWS_ACCESS_KEY_ID: $AWS_DOCUMENTATION_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY: $AWS_DOCUMENTATION_SECRET_ACCESS_KEY
+    AWS_DOCUMENTATION_DNS: $AWS_DOCUMENTATION_ENV_DNS_DEV
+  only:
+    refs:
+      - develop
+    changes:
+      - docs/*
+
+.doc-hlg:
+  <<: *Doc
+  variables:
+    AWS_ACCESS_KEY_ID: $AWS_DOCUMENTATION_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY: $AWS_DOCUMENTATION_SECRET_ACCESS_KEY
+    AWS_DOCUMENTATION_DNS: $AWS_DOCUMENTATION_ENV_DNS_HLG
+  only:
+    refs:
+      - homolog
+    changes:
+      - docs/*
+
+.doc-prd:
+  <<: *Doc
+  variables:
+    AWS_ACCESS_KEY_ID: $AWS_DOCUMENTATION_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY: $AWS_DOCUMENTATION_SECRET_ACCESS_KEY
+    AWS_DOCUMENTATION_DNS: $AWS_DOCUMENTATION_ENV_DNS_PRD
+  only:
+    refs:
+      - master
+    changes:
+      - docs/*
