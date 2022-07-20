@@ -21,27 +21,6 @@ const env = {
   httpActive: process.env.HTTP_ACTIVE === 'true',
   amqpActive: process.env.AMQP_ACTIVE === 'true',
   cronActive: process.env.CRON_ACTIVE === 'true',
-
-  /* Topazio Integration */
-  topazioFacadeUrl: process.env.TOPAZIO_FACADE_URL || '',
-
-  /* Itau Integration */
-  itauFacadeUrl: process.env.ITAU_FACADE_URL || '',
-
-  /* External URLs Integration */
-  s3Url: process.env.S3_URL || '',
-  phiAuthorizationUrl: process.env.PHI_AUTHORIZATION_URL || '',
-  venonSessionName: process.env.SESSION_NAME || '',
-
-  /* Security Gateway */
-  checkFraudActive: process.env.SECURITY_GATEWAY_ACTIVE === 'true',
-  securityGatewayClientId: process.env.SECURITY_GATEWAY_CLIENT_ID || '',
-  securityGatewayUserName: process.env.SECURITY_GATEWAY_USERNAME || '',
-  securityGatewayPassword: process.env.SECURITY_GATEWAY_PASSWORD || '',
-  securityGatewayUrl: process.env.SECURITY_GATEWAY_URL || '',
-  maxAllowedFraudScore: parseInt(process.env.MAX_ALLOWED_FRAUD_SCORE || '0', 10),
-  minFraudInsightsOccurrence: parseInt(process.env.MIN_FRAUD_INSIGHTS_OCCURRENCE || '0', 10),
-  fraudInsightsCodes: process.env.FRAUD_INSIGHTS_CODES || '',
 };
 
 export { env };
