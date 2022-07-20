@@ -1,5 +1,5 @@
+import { ICurrencyService, ICurrencyUseCase } from './currency';
 import { Container as infraContainer } from './infrastructure';
-import { IMessageService, ICurrencyUseCase } from './message';
 
 export type SecurityGatewayConfig = {
   active: boolean;
@@ -9,17 +9,17 @@ export type SecurityGatewayConfig = {
 };
 
 export type Container = {
-  currencyUseCase: IMessageUseCase;
+  currencyUseCase: ICurrencyUseCase;
 };
 
 export type ContainerConfig = {
-  messageRepository: infraContainer['messageRepository'];
+  currencyRepository: infraContainer['currencyRepository'];
 };
 
 export type ServiceContext = {
-  messageRepository: ContainerConfig['messageRepository'];
+  currencyRepository: ContainerConfig['currencyRepository'];
 };
 
 export type UseCaseContext = {
-  messageService: IMessageService;
+  currencyService: ICurrencyService;
 };

@@ -1,5 +1,6 @@
 import { HttpAdapter } from './adapter/http';
-import { MessageRepository } from './repository/entry';
+import { MysqlAdapter } from './adapter/mysql';
+import { CurrencyRepository } from './repository/currency';
 
 import {
   ContainerConfig,
@@ -8,9 +9,9 @@ import {
 
 export function createContainer(config: ContainerConfig): Container {
   return {
-    messageRepository: new MessageRepository({
+    currencyRepository: new CurrencyRepository({
       config,
-      httpAdapter: HttpAdapter,
+      mysqlAdapter: new MysqlAdapter(),
     }),
   };
 }

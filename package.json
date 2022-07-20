@@ -1,7 +1,7 @@
 {
-  "name": "dict",
-  "version": "1.5.0",
-  "description": "Project for integration with dict by PIX",
+  "name": "Currency",
+  "version": "1.0.0",
+  "description": "Project for convert price",
   "main": "src/index.ts",
   "scripts": {
     "start": "node dist/src/index.js",
@@ -17,12 +17,8 @@
     "migrate:create": "./node_modules/knex/bin/cli.js migrate:make $MIGRATE_NAME --env local",
     "migrate:up": "./node_modules/knex/bin/cli.js migrate:latest --env local"
   },
-  "author": "Phi Pagamentos",
+  "author": "Andre Cabral",
   "license": "UNLICENSED",
-  "repository": {
-    "type": "git",
-    "url": "https://git.4all.com/fintech/phi/services/payment-domain/card-issuer-processor"
-  },
   "dependencies": {
     "@brazilian-utils/is-valid-cnpj": "^1.0.0-alpha.3",
     "@brazilian-utils/is-valid-cpf": "^1.0.0-alpha.3",
@@ -47,8 +43,7 @@
     "moment-timezone": "^0.5.31",
     "mysql2": "^2.1.0",
     "ramda": "^0.26.1",
-    "uuid": "^7.0.3",
-    "venom-bot": "^4.0.9"
+    "uuid": "^7.0.3"
   },
   "devDependencies": {
     "@types/amqplib": "^0.5.13",

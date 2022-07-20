@@ -4,7 +4,7 @@ import express from 'express';
 import helmet from 'helmet';
 
 import { ExpressLogger, Logger } from '../../util/logger';
-import { MessageController } from './controller/message';
+import { CurrencyController } from './controller/currency';
 import { errorHandler } from './middleware/errorHandler';
 import { validator } from './middleware/validator';
 
@@ -64,7 +64,7 @@ export class HttpInterface implements IHttpInterface {
 
   setupRoutes() {
     [
-      new MessageController({
+      new CurrencyController({
         coreContainer: this.coreContainer,
         validator,
       }),

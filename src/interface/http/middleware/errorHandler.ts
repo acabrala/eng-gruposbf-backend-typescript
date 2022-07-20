@@ -2,43 +2,13 @@
 import httpStatusCodes from 'http-status-codes';
 import R from 'ramda';
 
-import {
-  BadRequestError,
-  EntryAlreadyExists,
-  EntryInCustodyOfDifferentParticipant,
-  EntryInCustodyOfDifferentCheckingAccount,
-  EntryLimitExceeded,
-  EntryOwnedByDifferentPerson,
-  InternalServerError,
-  InvalidClaimToConfirm,
-  InvalidClaimToFind,
-  InvalidEntryToFind,
-  InvalidEntryToList,
-  InvalidEntryToRemove,
-  InvalidEntryToSearch,
-  InvalidEntryToUpdate,
-  NotFoundError,
-  OutOfCuttingTimeError,
-  InvalidEntry,
-  InvalidClaim,
-  EntryLockedByClaim,
-  InvalidCredentialToFind,
-  IdentifiedFraudRisk,
-} from '../../../util/error';
+import { BadRequestError, NotFoundError, InternalServerError } from '../../../util/error';
 import { Logger } from '../../../util/logger';
 
 import { HttpRequest, HttpResponse, HttpNext } from '../../../types/interface';
 
 const isNotFoundError = (err: any): boolean => {
-  return err instanceof NotFoundError
-  || err instanceof InvalidClaimToConfirm
-  || err instanceof InvalidClaimToFind
-  || err instanceof InvalidEntryToList
-  || err instanceof InvalidEntryToUpdate
-  || err instanceof InvalidEntryToSearch
-  || err instanceof InvalidEntryToFind
-  || err instanceof InvalidEntryToRemove
-  || err instanceof InvalidCredentialToFind;
+  return err instanceof NotFoundError;
 };
 
 export const errorHandler = (
@@ -57,34 +27,9 @@ export const errorHandler = (
   }
 
   if (
-    err instanceof EntryAlreadyExists
-    || err instanceof EntryLimitExceeded
-    || err instanceof EntryOwnedByDifferentPerson
-    || err instanceof EntryInCustodyOfDifferentParticipant
-    || err instanceof EntryLockedByClaim
-    || err instanceof EntryInCustodyOfDifferentCheckingAccount
-  ) {
-    status = httpStatusCodes.CONFLICT;
-    throwErr = err;
-  }
-
-  if (
-    err instanceof OutOfCuttingTimeError
-  ) {
-    status = httpStatusCodes.BAD_GATEWAY;
-    throwErr = err;
-  }
-
-  if (
     err instanceof BadRequestError
-    || err instanceof InvalidEntry
-    || err instanceof InvalidClaim
   ) {
     status = httpStatusCodes.BAD_REQUEST;
-  }
-
-  if (err instanceof IdentifiedFraudRisk) {
-    status = httpStatusCodes.NOT_ACCEPTABLE;
   }
 
   if (status !== httpStatusCodes.INTERNAL_SERVER_ERROR) {

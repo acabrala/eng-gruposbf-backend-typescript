@@ -1,4 +1,4 @@
-FROM keymetrics/pm2:14-alpine
+FROM node:alpine
 
 # Install python to compile packages
 RUN apk add --no-cache python make g++
@@ -13,4 +13,3 @@ RUN npm run build
 
 EXPOSE ${SERVICEPORT}
 
-CMD npm run migrate:up && npm run start

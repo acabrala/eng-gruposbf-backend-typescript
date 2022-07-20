@@ -1,654 +1,67 @@
 openapi: '3.0.2'
 info:
-  version: 1.5.0
-  title: DICT
-  description: Serviço para comunicação com PIX
+  version: 1.0.0
+  title: CURRENCY
+  description: Serviço para converter preço para moeda
   contact:
     name: API Support
-    email: 'ajuda@somosphi.com'
+    email: 'superte@teste.com'
 
 servers:
   - description: Desenvolvimento
-    url: https://api.dev.phipagamentos.com/v1/pix/{ispb}/dict
-  - description: Produção
-    url: https://api.phipagamentos.com/v1/pix/{ispb}/dict
+    url: http://localhost:3000/v1
+
 
 tags:
-  - name: Entries
+  - name: Currencies
     description: >
-      As `entries` são registros de chaves transacionais no Diretório de Identificadores de Contas Transacionais (DICT). Estas chaves permitem a realização de transações bancárias sem a necessidade de utilização de dados
-      bancários convencionais, tais como número de conta e agência bancária no ato da transação.
-
-
-      Nesse contexto, alguns tipos diferentes de chaves podem ser cadastradas e utilizadas durante as referidas transações bancárias, incluindo dados como `CPF`, `CNPJ`, `EMAIL`, `TELEFONE` e `EVP`.
-      Vale ressaltar que o valores de chaves do tipo EVP (Endereço Virtual de Pagamento) são definidos pelo Banco Central e então fornecidas aos clientes, diferente de chaves dos demais tipos que são fornecidas pelo cliente e posteriormente registradas no Banco Central.
-
-  - name: Credentials
-    description: >
-      O cadastro de credenciais do participante direto em nossa base de dados é necessário para que possamos estabelecer conexão com o participante direto utilizando as chaves de aceso de nossos clientes.
-      Vale ressaltar que é possível realizar o cadastro de diversas chaves de acesso.
-
-
-      No entanto, cada uma das referidas credenciais devem ser relacionadas a um participante direto diferente, isto é, não é possível cadastrar duas chaves
-      de acesso referentes ao Banco Topázio para o mesmo PSP. Neste caso, em meio à necessidade de qualquer mudança, recomendamos a atualização das chaves de acesso.
-
-  - name: Claims
-    description: >
-      A reivindicação de chaves transacionais permite que usuários realizem a reivindicação de portabilidade de suas chaves transacionais e até mesmo realizem a reivindicação de posse de chaves transacionais.
-      A reivindicação de `portabilidade` de chaves é indicada para situações em que o usuário da chave deseja mudar a vinculação de uma chave para uma conta associada a um participante diferente do atual.
-
-
-      Por outro lado, a `reivindicação de posse` de chave é indicada para situações onde a chave desejada já foi registrada no DICT por outra pessoa.
-      Nos dois cenários de reivindicação existirá a figura do PSP que irá ceder a chave (PSP Doador), e o PSP que irá receber a chave (PSP Reivindicador).
-      No entanto, vale ressaltar que no cenário de reivindicação de posse, o PSP doador e o reivindicador podem ser o mesmo e os processos de reivindicação são sempre iniciados pelo PSP reivindicador.
-
-
-      **Diagrama de estados**
-
-
-      ```
-
-      ( PENDING )------->( OPEN )------->( WAITING_RESOLUTION )------->( CONFIRMED )------->( COMPLETED )
-            \                                       |                        /
-             \                                      |                       /
-              \-- Falha ao tentar abrir,            |                      /
-               \  dados ou cenário                  |                     /--Apenas para
-                \  inapropriado                     v                    /   reivindicação
-            ( FAILED )                        ( CANCELLED )<------------v    de posse
-
-      ```
-
-  - name: Notification
-    description: |
-      As notificações são um mecanismo de comunicação com o cliente para determinados eventos onde, de modo administrativo com a Phi, será informado uma URL com um tamanho máximo de 250 caracteres. Essa é uma URL do seu sistema que irá receber notificações a cada alteração de status de uma reivindicação, através de uma requisição `POST` contendo um corpo JSON (ContentType: `application/json`).
-
-      Para reivindicações o evento de notificação será realizado para uma URL, acordada anteriormente com a Phi, com o seguinte formato:
-
-      <table>
-        <thead>
-          <tr>
-            <th>Campo</th>
-            <th>Descrição</th>
-            <th>Formato</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>id</strong></td>
-            <td>Identificador da reivindicação</td>
-            <td>String</td>
-          </tr>
-          <tr>
-            <td><strong>type</strong></td>
-            <td>
-              Tipo da notificação:
-              <ul>
-                <li><b>DICT_ENTRY_CLAIM</b></li>
-              </ul>
-            </td>
-            <td>String</td>
-          </tr>
-          <tr>
-            <td><strong>status</strong></td>
-            <td>
-              Status da reivindicação:
-              <ul>
-                <li><b>FAILED</b> - Erro ao tentar abrir uma reivindicação</li>
-                <li><b>CONFIRMED</b> - Reivindicação confirmada pelo doador</li>
-                <li><b>WAITING_RESOLUTION</b> - Em análise (Reivindicação de posse)</li>
-                <li><b>CANCELLED</b> - O doador ou reivindicador cancelou a reivindicação</li>
-                <li><b>COMPLETED</b> - Tanto o DICT quanto o reivindicador atualizaram suas bases com o novo vínculo</li>
-              </ul>
-            </td>
-            <td>String</td>
-          </tr>
-        </tbody>
-      </table>
-
-      Para que seja considerado que a comunicação ocorreu com sucesso, a resposta da requisição deverá conter o código de status `200` ou `204` do protocolo HTTP. Caso ocorra um timeout na resposta, ou a resposta contenha um status diferente dos citados anteriormente, serão efetuadas retentativas intervaladas entre si em pelo menos um minuto até um máximo de cinco vezes. Caso ainda não se obtenha sucesso, **NÃO** serão feitas tentativas adicionais de comunicação da mudança de status.
-
-      O recurso de notificação está sujeito a falhas de comunicação, indisponibilidade de alguma das partes. Desta forma, não elimina a necessidade de consultas periódicas ao status da reivindicação que se deseja monitorar.
-
-      Outra questão importante é que a notificação pode ser forjada, então quando uma notificação for recebida **não se deve assumir que a informação é confiável**. O sistema da Phi deve ser consultado para confirmar se aquela informação realmente é válida ou não. De certa forma, a notificação deve ser usada como um trigger para ações.
-
+      As `currencies` são as moedas que podem ser utilizada para converter preços dos produtos para atender clientes que desejam pagar em suas moedas locais.
 paths:
-  /entries:
-    parameters:
-      - name: ispb
-        in: path
-        required: true
-        schema:
-          $ref: '#/components/schemas/Ispb'
-
+  /currency:
     post:
       tags:
-        - Entries
-      summary: Criar vínculo
-      security:
-        - Development: []
-        - Production: []
+        - Currencies
+      summary: Criar moeda
       description: |
-        Cria um novo vínculo de chave com conta transacional
+        Cria um nova moeda para ser utilizada para conversão
 
-        Durante o processo de criação os seguintes cenários de falha poderão acontecer, são eles:
 
-        - `EntryAlreadyExists`: Já existe vínculo para essa chave com o mesmo participante e dono.
-        - `EntryLimitExceeded`: Número de vínculos associados a conta transacional excedeu o limite máximo.
-        - `EntryOwnedByDifferentPerson`: Já existe vínculo para essa chave mas ela é possuída por outra pessoa. Indica-se que seja feita uma reivindicação de posse.
-        - `EntryInCustodyOfDifferentParticipant`: Já existe vínculo para essa chave com o mesmo dono, mas ela encontra-se associada a outro participante. Indica-se que seja feita uma reivindicação de portabilidade.
-        - `EntryInCustodyOfDifferentCheckingAccount`: Já existe vínculo para essa chave com o mesmo dono, mas ela encontra-se associada a outra conta transacional do mesmo participante. Indica-se que seja feita uma portabilidade.
       requestBody:
         content:
           application/json:
             schema:
               required:
                 - name
-                - phone
-                - document
-                - key
-                - bankAccount
+                - value
               properties:
+                value:
+                  type: number
+                  example: 5.30
                 name:
-                  $ref: '#/components/schemas/Name'
-                phone:
-                  $ref: '#/components/schemas/Phone'
-                email:
-                  $ref: '#/components/schemas/Email'
-                document:
-                  $ref: '#/components/schemas/Document'
-                key:
-                  $ref: '#/components/schemas/KeyWithoutEVPValue'
-                bankAccount:
-                  $ref: '#/components/schemas/BankAccountWithType'
+                  type: string
+                  example: 'USD'
+
 
       responses:
         201:
-          description: Vínculo da chave realizado com sucesso
+          description: Moeda criada com sucesso
           content:
             application/json:
               schema:
                 properties:
-                  entryId:
-                    $ref: '#/components/schemas/EntryId'
-                  cid:
-                    $ref: '#/components/schemas/EntryCid'
+                  currencyId:
+                    $ref: '#/components/schemas/CurrencyId'
         400:
           $ref: '#/components/responses/BadRequest'
-        409:
-          description: Falha na criação de um vínculo
-          content:
-            application/json:
-              schema:
-                oneOf:
-                  - $ref: '#/components/schemas/EntryAlreadyExists'
-                  - $ref: '#/components/schemas/EntryLimitExceeded'
-                  - $ref: '#/components/schemas/EntryOwnedByDifferentPerson'
-                  - $ref: '#/components/schemas/EntryInCustodyOfDifferentParticipant'
-                  - $ref: '#/components/schemas/EntryInCustodyOfDifferentCheckingAccount'
-        502:
-          $ref: '#/components/responses/OutOfCuttingTimeError'
 
     get:
       tags:
-        - Entries
-      summary: Buscar vínculo
-      security:
-        - Development: []
-        - Production: []
-      description: Busca um vínculo de chave com conta transacional
-      parameters:
-        - in: query
-          required: true
-          name: keyType
-          schema:
-            $ref: '#/components/schemas/EntryKeyBase/properties/type'
-        - in: query
-          required: true
-          name: keyValue
-          schema:
-            type: string
-          description: Valor da chave
-          example: '12345678901'
-        - in: query
-          required: true
-          name: document
-          description: Documento do pagador
-          schema:
-            $ref: '#/components/schemas/Document/properties/value'
+        - Currencies
+      summary: Listar moedas
+      description: Lista todas as moedas existentes
       responses:
         200:
-          description: Dados do vínculo
-          content:
-            application/json:
-              schema:
-                properties:
-                  name:
-                    $ref: '#/components/schemas/Name'
-                  phone:
-                    $ref: '#/components/schemas/Phone'
-                  email:
-                    $ref: '#/components/schemas/Email'
-                  document:
-                    $ref: '#/components/schemas/Document'
-                  key:
-                    $ref: '#/components/schemas/KeyWithStatus'
-                  bankAccount:
-                    $ref: '#/components/schemas/BankAccountWithType'
-                  ispb:
-                    $ref: '#/components/schemas/Ispb'
-                  participant:
-                    $ref: '#/components/schemas/NameParticipant'
-                  endToEndId:
-                    $ref: '#/components/schemas/EndToEndId'
-        400:
-          $ref: '#/components/responses/BadRequest'
-        404:
-          $ref: '#/components/responses/NotFound'
-        502:
-          $ref: '#/components/responses/OutOfCuttingTimeError'
-
-    put:
-      tags:
-        - Entries
-      summary: Atualizar vínculo
-      security:
-        - Development: []
-        - Production: []
-      description: |
-       Atualiza um vínculo de chave com conta transacional
-
-       A ser utilizado no cenário de atualização da informação da conta de um cliente, permanecendo este no mesmo PSP. Somente pode ser atualizada a informação de conta do vínculo. Outras atualizações devem ser feitas por exclusão/inclusão do vínculo, portabilidade ou reivindicação de posse, a depender da situação.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              required:
-                - reason
-                - name
-                - phone
-                - document
-                - key
-                - bankAccount
-              properties:
-                reason:
-                  $ref: '#/components/schemas/ReasonUpdate'
-                name:
-                  $ref: '#/components/schemas/Name'
-                phone:
-                  $ref: '#/components/schemas/Phone'
-                email:
-                  $ref: '#/components/schemas/Email'
-                document:
-                  $ref: '#/components/schemas/Document'
-                key:
-                  $ref: '#/components/schemas/Key'
-                bankAccount:
-                  $ref: '#/components/schemas/BankAccountWithType'
-
-      responses:
-        200:
-          description: Vínculo atualizado com sucesso
-          content:
-            application/json:
-              schema:
-                properties:
-                  key:
-                    $ref: '#/components/schemas/Key'
-                  cid:
-                    $ref: '#/components/schemas/EntryCid'
-        400:
-          $ref: '#/components/responses/BadRequest'
-        502:
-          $ref: '#/components/responses/OutOfCuttingTimeError'
-
-    delete:
-      tags:
-        - Entries
-      summary: Remover vínculo
-      security:
-        - Development: []
-        - Production: []
-      description: |
-        Remove um vínculo de chave com conta transacional
-
-        Durante o processo de remoção o seguinte cenário de falha poderá acontecer:
-
-        - `EntryLockedByClaim`: Existe uma reivindicação com status diferente de concluída ou cancelada para a chave do vínculo. Enquanto estiver nessa situação, o vínculo não pode ser excluído.
-
-      parameters:
-        - in: query
-          required: true
-          name: reason
-          schema:
-            $ref: '#/components/schemas/Reason'
-        - in: query
-          required: true
-          name: keyType
-          schema:
-            $ref: '#/components/schemas/EntryKeyBase/properties/type'
-        - in: query
-          required: true
-          name: keyValue
-          schema:
-            type: string
-          description: Valor da chave
-          example: '12345678901'
-
-      responses:
-        204:
-          description: Vínculo removido com sucesso
-        400:
-          $ref: '#/components/responses/BadRequest'
-        409:
-          description: Falha ao excluir um vínculo
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EntryLockedByClaim'
-        502:
-          $ref: '#/components/responses/OutOfCuttingTimeError'
-
-  /entries/{id}:
-    get:
-      tags:
-        - Entries
-      summary: Buscar vínculo por id
-      security:
-        - Development: []
-        - Production: []
-      description: Busca um vínculo por id de chave com conta transacional
-      parameters:
-        - name: id
-          in: path
-          description: ID do vínculo
-          required: true
-          schema:
-            $ref: '#/components/schemas/EntryId'
-      responses:
-        200:
-          description: Resposta com os dados do vínculo
-          content:
-            application/json:
-              schema:
-                properties:
-                  name:
-                    $ref: '#/components/schemas/Name'
-                  participant:
-                    $ref: '#/components/schemas/NameParticipant'
-                  phone:
-                    $ref: '#/components/schemas/Phone'
-                  email:
-                    $ref: '#/components/schemas/Email'
-                  document:
-                    $ref: '#/components/schemas/Document'
-                  key:
-                    $ref: '#/components/schemas/KeyWithStatus'
-                  bankAccount:
-                    $ref: '#/components/schemas/BankAccountWithType'
-        404:
-          $ref: '#/components/responses/NotFound'
-
-  /entries/by-bank-account:
-    parameters:
-    - name: ispb
-      in: path
-      required: true
-      schema:
-        $ref: '#/components/schemas/Ispb'
-    - in: query
-      required: true
-      name: branch
-      schema:
-        $ref: '#/components/schemas/BankAccount/properties/branch'
-    - in: query
-      required: true
-      name: number
-      schema:
-        $ref: '#/components/schemas/BankAccount/properties/number'
-
-    get:
-      tags:
-        - Entries
-      summary: Listar vínculos por conta
-      security:
-      - Development: []
-      - Production: []
-      description: Lista chaves vinculadas a uma conta transacional
-      responses:
-        200:
-          description: Resposta com a lista de chaves
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/KeyWithStatus'
-        400:
-          $ref: '#/components/responses/BadRequest'
-        404:
-          $ref: '#/components/responses/NotFound'
-        502:
-          $ref: '#/components/responses/OutOfCuttingTimeError'
-
-  /credentials:
-    parameters:
-      - name: ispb
-        in: path
-        required: true
-        schema:
-          $ref: '#/components/schemas/Ispb'
-
-    post:
-      tags:
-        - Credentials
-      summary: Adiciona credenciais de participante
-      description: Adiciona credenciais de um participante direto
-      requestBody:
-        content:
-          application/json:
-            schema:
-              required:
-                - participantName
-                - participantClientId
-                - participantClientSecret
-              properties:
-                participantName:
-                  type: string
-                  description: Nome para identificar o participante direto
-                  enum:
-                    - TOPAZIO
-                  example: TOPAZIO
-                participantClientId:
-                  type: string
-                  description: Identificador de usuário fornecido pelo participante (utilizada para autorização de acesso)
-                  example: someNiceClientId123
-                participantClientSecret:
-                  type: string
-                  description: Chave secreta fornecida pelo participante (utilizada para autorização de acesso)
-                  example: some1Nice2Secret#123
-
-      responses:
-        204:
-          description: Adição de credenciais realizada com sucesso
-        400:
-          $ref: '#/components/responses/BadRequest'
-
-    delete:
-      tags:
-        - Credentials
-      summary: Remover credencial de participante
-      description: Remove uma credencial de um participante direto
-
-      responses:
-        204:
-          description: Remoção de credencial realizada com sucesso
-        400:
-          $ref: '#/components/responses/BadRequest'
-
-    patch:
-      tags:
-        - Credentials
-      summary: Atualizar credencial de participante
-      description: Atualiza uma credencial de um participante direto
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                participantName:
-                  type: string
-                  description: Nome para identificar o participante direto
-                  enum:
-                    - TOPAZIO
-                  example: TOPAZIO
-                participantClientId:
-                  type: string
-                  description: Identificador de usuário fornecido pelo participante (utilizada para autorização de acesso)
-                  example: someNiceClientId123
-                participantClientSecret:
-                  type: string
-                  description: Chave secreta fornecida pelo participante (utilizada para autorização de acesso)
-                  example: some1Nice2Secret#123
-
-      responses:
-        200:
-          description: Atualização de credencial realizada com sucesso
-        400:
-          $ref: '#/components/responses/BadRequest'
-        404:
-          $ref: '#/components/responses/NotFound'
-
-  /claims:
-    parameters:
-      - name: ispb
-        in: path
-        required: true
-        schema:
-          $ref: '#/components/schemas/Ispb'
-
-    post:
-      tags:
-        - Claims
-      summary: Solicitar reivindicação de chave
-      description: |
-        Cria uma solicitação de reivindicação de chave
-
-        Para solicitar reivindicações de `portabilidade` os tipos de chave permitidos são:
-          - CPF
-          - CNPJ
-          - PHONE
-          - EMAIL
-
-        Para solicitar reivindicações de `posse` os tipos de chave permitidos são:
-          - PHONE
-          - EMAIL
-
-      requestBody:
-        content:
-          application/json:
-            schema:
-              required:
-                - type
-                - name
-                - phone
-                - document
-                - key
-                - bankAccount
-              properties:
-                type:
-                  type: string
-                  description: >
-                    Tipo de reivindicação desejada:
-                      - `OWNERSHIP`: Reivindicação de posse da chave
-                      - `PORTABILITY`: Reivindicação de portabilidade de chave de outro PSP
-                  enum:
-                    - OWNERSHIP
-                    - PORTABILITY
-                  example: PORTABILITY
-                name:
-                  $ref: '#/components/schemas/Name'
-                phone:
-                  $ref: '#/components/schemas/Phone'
-                email:
-                  $ref: '#/components/schemas/Email'
-                document:
-                  $ref: '#/components/schemas/Document'
-                key:
-                  $ref: '#/components/schemas/KeyWithoutEVP'
-                bankAccount:
-                  $ref: '#/components/schemas/BankAccountWithOptionalType'
-
-      responses:
-        202:
-          description: Reivindicação de chave solicitada
-          content:
-            application/json:
-              schema:
-                properties:
-                  claimId:
-                    description: Identificador da reivindicação
-                    type: string
-                    example: 8011720b-104a-42dd-8b4f-19997075fde8
-        400:
-          $ref: '#/components/responses/BadRequest'
-        500:
-          $ref: '#/components/responses/InternalServerError'
-
-    get:
-      tags:
-        - Claims
-      summary: Buscar as solicitações de reivindicações de chave
-      security:
-        - Development: []
-        - Production: []
-      description: Busca as claim solicitadas
-      parameters:
-        - in: query
-          name: keyType
-          description: Tipo da chave. **Obrigatório** quando informado o `keyValue`
-          schema:
-            type: string
-            example: EMAIL
-            enum:
-              - PHONE
-              - EMAIL
-              - CPF
-              - CNPJ
-        - in: query
-          name: keyValue
-          description: Valor da chave. **Obrigatório** quando informado o `keyType`
-          schema:
-            type: string
-          example: ajuda@somosphi.com
-        - in: query
-          name: accountBranch
-          description: Agência da conta. **Obrigatório** quando informado o `accountNumber`
-          schema:
-            type: string
-          example: '0001'
-        - in: query
-          name: accountNumber
-          description: Número da conta. **Obrigatório** quando informado o `accountBranch`
-          schema:
-            type: string
-          example: 123456
-        - in: query
-          name: status
-          description: Status da reivindicação. **Obs:** esse filtro pode ser usado juntamente com os filtros anteriores, se enviado sozinho irá retornar um erro `400`
-          schema:
-            type: string
-            enum:
-              - PENDING
-              - OPEN
-              - FAILED
-              - WAITING_RESOLUTION
-              - CONFIRMED
-              - CANCELLED
-              - COMPLETED
-          example: COMPLETED
-      responses:
-        200:
-          description: Reivindicações de chaves encontradas
+          description: Dados das moedas
           content:
             application/json:
               schema:
@@ -656,713 +69,111 @@ paths:
                 items:
                   type: object
                   properties:
-                    type:
+                    id:
                       type: string
-                      description: >
-                        Tipo de reivindicação desejada:
-                          - `OWNERSHIP`: Reivindicação de posse da chave
-                          - `PORTABILITY`: Reivindicação de portabilidade de chave para outro PSP
-                      enum:
-                        - OWNERSHIP
-                        - PORTABILITY
-                      example: PORTABILITY
-                    reason:
-                      type: string
-                      description: Motivo da reivindicação
-                      enum:
-                        - USER_REQUESTED
-                        - CLOSED_BANK_ACCOUNT
-                        - FRAUD
-                      example: USER_REQUESTED
-                    player:
-                      $ref: '#/components/schemas/PlayerType'
+                      example: '4985562c-429f-436f-985a-6d90c55ff6d0'
                     name:
-                      $ref: '#/components/schemas/Name'
-                    phone:
-                      $ref: '#/components/schemas/Phone'
-                    email:
-                      $ref: '#/components/schemas/Email'
-                    status:
-                      type: object
-                      description: Status da reivindicação
-                      properties:
-                        value:
-                          type: string
-                          description: Status em que se encontra a reivindicação
-                          enum:
-                            - PENDING
-                            - OPEN
-                            - WAITING_RESOLUTION
-                            - CONFIRMED
-                            - CANCELLED
-                            - COMPLETED
-                            - FAILED
-                          example: OPEN
-                        message:
-                          type: string
-                          description: Mensagem com detalhes do status
-                          example: Ongoing process
-                    document:
-                      $ref: '#/components/schemas/Document'
-                    entryId:
-                      $ref: '#/components/schemas/EntryId'
-                    key:
-                      $ref: '#/components/schemas/Key'
-                    bankAccount:
-                      $ref: '#/components/schemas/BankAccount'
-                    endResolutionDate:
-                      $ref: '#/components/schemas/EndResolutionDate'
+                      type: string
+                      example: 'EUR'
+                    value:
+                      type: number
+                      example: 5.78
+                    createdAt:
+                      type: string
+                      example: '2022-07-19 18:58:54'
+                    updatedAt:
+                      type: string
+                      example: '2022-07-19 18:58:54'
+
         400:
           $ref: '#/components/responses/BadRequest'
         404:
           $ref: '#/components/responses/NotFound'
-        500:
-          $ref: '#/components/responses/InternalServerError'
 
-    put:
+
+  /currency/{id}:
+    patch:
       tags:
-        - Claims
-      summary: Cancelar ou confirmar reivindicações
-      description: |
-        Cancela ou confirma a reivindicação de uma chave
-
-        A tabela abaixo define, a depender da razão e do tipo, quem pode cancelar.
-
-        <table>
-          <thead>
-            <tr>
-              <th></th>
-              <th colspan="2">OWNERSHIP</th>
-              <th colspan="2">PORTABILITY</th>
-            </tr>
-            <tr>
-              <th>Razão</th>
-              <th>Doador</th>
-              <th>Reivindicador</th>
-              <th>Doador</th>
-              <th>Reivindicador</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>USER_REQUESTED</td>
-              <td></td>
-              <td>✓</td>
-              <td>✓</td>
-              <td>✓</td>
-            </tr>
-            <tr>
-              <td>CLOSED_BANK_ACCOUNT</td>
-              <td></td>
-              <td>✓</td>
-              <td></td>
-              <td>✓</td>
-            </tr>
-            <tr>
-              <td>FRAUD</td>
-              <td>✓</td>
-              <td>✓</td>
-              <td>✓</td>
-              <td>✓</td>
-            </tr>
-          </tbody>
-        </table>
-
-        A tabela abaixo define, a depender da razão e do tipo, quem pode confirmar.
-        <table>
-          <thead>
-            <tr>
-              <th></th>
-              <th colspan="2">OWNERSHIP</th>
-              <th colspan="2">PORTABILITY</th>
-            </tr>
-            <tr>
-              <th>Razão</th>
-              <th>Doador</th>
-              <th>Reivindicador</th>
-              <th>Doador</th>
-              <th>Reivindicador</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>USER_REQUESTED</td>
-              <td>✓</td>
-              <td></td>
-              <td>✓</td>
-              <td></td>
-            </tr>
-            <tr>
-              <td>CLOSED_BANK_ACCOUNT</td>
-              <td></td>
-              <td></td>
-              <td>✓</td>
-              <td></td>
-            </tr>
-          </tbody>
-        </table>
-
-        **Observação:** Caso o participante direto seja BANCO TOPÁZIO, o cenário de confirmação se aplica somente quando o cliente esteja caracterizado como um **Doador** de uma reivindicação de `posse`. Nos demais cenários a reivindicação será processada automaticamente e internamente.
-
+        - Currencies
+      summary: Atualizar moeda por id
+      description: Atualizar uma moeda armazenada pelo id
       requestBody:
         content:
           application/json:
             schema:
               required:
-                - action
-                - reason
-                - key
-                - document
+                - value
               properties:
-                action:
-                  type: string
-                  description: >
-                    Ação que será realizada:
-                      - `CANCEL`: Cancela uma reivindicação
-                      - `CONFIRM`: Confirma uma reivindicação
-                  enum:
-                    - CANCEL
-                    - CONFIRM
-                  example: CANCEL
-                reason:
-                  description: Razão da ação
-                  type: string
-                  enum:
-                    - USER_REQUESTED
-                    - CLOSED_BANK_ACCOUNT
-                    - FRAUD
-                  example: USER_REQUESTED
-                key:
-                  $ref: '#/components/schemas/Key'
-                document:
-                  $ref: '#/components/schemas/Document'
+                value:
+                  type: number
+                  example: 5.30
+      parameters:
+        - name: id
+          in: path
+          description: ID da moeda
+          required: true
+          schema:
+            $ref: '#/components/schemas/CurrencyId'
       responses:
         200:
-          description: Ação realizada
+          description: Resposta com os dados da moeda
           content:
             application/json:
               schema:
-                required:
-                  - key
                 properties:
-                  key:
-                    type: object
-                    description: Informações da chave reivindicada
-                    required:
-                      - type
-                      - value
-                    properties:
-                      type:
-                        type: string
-                        description: Tipo de chave reivindicada
-                        example: CPF
-                      value:
-                        type: string
-                        description: Valor da chave reivindicada
-                        example: '12345678901'
-        400:
-          $ref: '#/components/responses/BadRequest'
-        404:
-          $ref: '#/components/responses/NotFound'
-        500:
-          $ref: '#/components/responses/InternalServerError'
-
-  /claims/{id}:
-    parameters:
-      - name: ispb
-        in: path
-        required: true
-        schema:
-          $ref: '#/components/schemas/Ispb'
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-        description: Identificador único de uma reivindicação
-        example: '9eb50002-c6ee-4dcc-9660-d03cc93eb414'
-
-    get:
-      tags:
-        - Claims
-      summary: Buscar reivindicação por id
-      description: Buscar reivindicação de chave pelo seu identificador
-      security:
-        - Development: []
-        - Production: []
-      responses:
-        200:
-          description: Reivindicação de chave encontrada
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                    description: >
-                      Tipo de reivindicação desejada:
-                        - `OWNERSHIP`: Reivindicação de posse da chave
-                        - `PORTABILITY`: Reivindicação de portabilidade de chave para outro PSP
-                    enum:
-                      - OWNERSHIP
-                      - PORTABILITY
-                    example: OWNERSHIP
-                  reason:
-                    type: string
-                    description: Motivo da reivindicação
-                    enum:
-                      - USER_REQUESTED
-                      - CLOSED_BANK_ACCOUNT
-                      - FRAUD
-                    example: USER_REQUESTED
-                  player:
-                      $ref: '#/components/schemas/PlayerType'
                   name:
-                    $ref: '#/components/schemas/Name'
-                  phone:
-                    $ref: '#/components/schemas/Phone'
-                  email:
-                    $ref: '#/components/schemas/Email'
-                  status:
-                    type: object
-                    description: Status da reivindicação
-                    properties:
-                      value:
-                        type: string
-                        description: Status em que se encontra a reivindicação
-                        enum:
-                          - PENDING
-                          - OPEN
-                          - WAITING_RESOLUTION
-                          - CONFIRMED
-                          - CANCELLED
-                          - COMPLETED
-                          - FAILED
-                        example: OPEN
-                      message:
-                        type: string
-                        description: Mensagem com detalhes do status
-                        example: Ongoing process
-                  document:
-                    $ref: '#/components/schemas/Document'
-                  entryId:
-                    $ref: '#/components/schemas/EntryId'
-                  key:
-                    $ref: '#/components/schemas/Key'
-                  bankAccount:
-                    $ref: '#/components/schemas/BankAccount'
-                  endResolutionDate:
-                    $ref: '#/components/schemas/EndResolutionDate'
+                    type: string
+                    example: "USD"
+                  value:
+                    type: number
+                    example: 5.98
+        404:
+          $ref: '#/components/responses/NotFound'
+
+  /currency/amount:
+    post:
+      tags:
+        - Currencies
+      summary: Converter valores para as moedas salvas
+      description: Converte o valor informado para as moedas atualmentes salvas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required:
+                - amount
+              properties:
+                amount:
+                  type: number
+                  example: 5.30
+      responses:
+        200:
+          description: Resposta com a lista dos valores
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      example: "USD"
+                    price:
+                      type: number
+                      example: 255.72
         400:
           $ref: '#/components/responses/BadRequest'
         404:
           $ref: '#/components/responses/NotFound'
-        500:
-          $ref: '#/components/responses/InternalServerError'
 
 components:
   schemas:
-    PlayerType:
-      type: string
-      description: >
-        Tipo da pessoa:
-          - `GRANTOR`: Doador
-          - `CLAIMER`: Reivindicador
-      enum:
-        - GRANTOR
-        - CLAIMER
-      example: GRANTOR
-
-    EndResolutionDate:
-      type: string
-      description: Data final para resolução da reivindicação
-      example: '2020-09-20T00:00:00.000Z'
-
-    Name:
-      type: string
-      maximum: 80
-      description: Nome da pessoa ou empresa
-      example: 'Fulano da Silva'
-
-    Phone:
-      type: string
-      minLength: 13
-      maxLength: 13
-      description: Número de telefone válido
-      example: '5551999887766'
-
-    Email:
-      type: string
-      description: E-mail válido
-      example: 'fulano@email.com'
-
-    Document:
-      type: object
-      description: Documento da pessoa ou empresa
-      properties:
-        type:
-          type: string
-          description: >
-            Tipo de documento:
-              - `CPF`: Pessoa física
-              - `CNPJ`: Pessoa jurídica
-          example: 'CPF'
-          enum:
-            - 'CPF'
-            - 'CNPJ'
-        value:
-          type: string
-          description: Valor do documento
-          example: '12345678901'
-      required:
-        - type
-        - value
-
-    BankAccount:
-      type: object
-      description: Dados da conta bancária
-      properties:
-        branch:
-          type: string
-          description: Agência da conta
-          example: '0001'
-        number:
-          type: string
-          description: Número da conta
-          example: '123456'
-        openingDate:
-          type: string
-          description: Data de abertura da conta
-          example: '2020-09-09T00:00:00.000Z'
-      required:
-        - branch
-        - number
-        - openingDate
-
-    BankAccountWithType:
-      allOf:
-        - $ref: '#/components/schemas/BankAccount'
-        - type: object
-          properties:
-            type:
-              $ref: '#/components/schemas/BankAccountType'
-          required:
-            - type
-
-    BankAccountWithOptionalType:
-      allOf:
-        - $ref: '#/components/schemas/BankAccount'
-        - type: object
-          properties:
-            type:
-              $ref: '#/components/schemas/BankAccountType'
-
-    BankAccountType:
-      type: string
-      enum: [CHECKING_ACCOUNT, SALARY_ACCOUNT, SAVINGS_ACCOUNT, PAYMENT_ACCOUNT]
-      description: |
-        Tipo da conta:
-        * `PAYMENT_ACCOUNT` - Conta de pagamento
-        * `CHECKING_ACCOUNT` - Conta corrente ou digital
-        * `SALARY_ACCOUNT` - Conta salário
-        * `SAVINGS_ACCOUNT` - Conta poupança
-      example: 'PAYMENT_ACCOUNT'
-      default: 'PAYMENT_ACCOUNT'
-
-    Ispb:
-      type: string
-      description: Código SPB da instituição
-      example: '00000000'
-      minimum: 8
-      maximum: 8
-
-    NameParticipant:
-      type: string
-      description: Nome da instituição
-      example: 'BANCO DO BRASIL S.A.'
-
-    KeyWithStatus:
-      type: object
-      description: Chave do PIX
-      properties:
-        status:
-          type: string
-          description: >
-            Status da chave:
-              - INACTIVE: Chave inativa para uso
-              - OWNERSHIP_IN_PROGRESS: Reivindicação de posse em andamento
-              - PORTABILITY_IN_PROGRESS: Reivindicação de portabilidade em andamento
-              - ACTIVE: Ativa para o uso
-          enum:
-            - INACTIVE
-            - OWNERSHIP_IN_PROGRESS
-            - PORTABILITY_IN_PROGRESS
-            - ACTIVE
-          example: ACTIVE
-        type:
-          type: string
-          description: Tipo da chave
-          enum:
-            - CPF
-            - CNPJ
-            - PHONE
-            - EMAIL
-            - EVP
-          example: CPF
-        value:
-          type: string
-          description: CPF válido (12345678901)
-          example: '12345678901'
-
-    EntryKeyBase:
-      required:
-        - value
-      properties:
-        type:
-          type: string
-          description: Tipo da chave
-          enum:
-            - CPF
-            - CNPJ
-            - PHONE
-            - EMAIL
-            - EVP
-          example: CPF
-
-    EntryKeyCPF:
-      required:
-        - type
-      allOf:
-        - $ref: '#/components/schemas/EntryKeyBase'
-        - properties:
-            value:
-              type: string
-              description: CPF válido (12345678901)
-              example: '12345678901'
-
-    EntryKeyCNPJ:
-      required:
-        - type
-      allOf:
-        - $ref: '#/components/schemas/EntryKeyBase'
-        - properties:
-            value:
-              type: string
-              description: CNPJ válido (12345678901234)
-              example: '12345678901234'
-
-    EntryKeyPhone:
-      required:
-        - type
-      allOf:
-        - $ref: '#/components/schemas/EntryKeyBase'
-        - properties:
-            value:
-              type: string
-              minLength: 13
-              maxLength: 13
-              description: Número de telefone válido (5510998765432)
-              example: '5510998765432'
-
-    EntryKeyEmail:
-      required:
-        - type
-      allOf:
-        - $ref: '#/components/schemas/EntryKeyBase'
-        - properties:
-            value:
-              type: string
-              description: E-mail válido (pix@phi.com)
-              example: 'pix@phi.com'
-
-    EntryKeyEVP:
-      required:
-        - type
-      allOf:
-        - $ref: '#/components/schemas/EntryKeyBase'
-        - properties:
-            value:
-              type: string
-              description: EVP (Endereço Virtual de Pagamento)
-              example: '523ce7ef-9534-45e5-98e6-465c9fe1419c'
-              format: UUID
-
-    Key:
-      type: object
-      description: Chave do pix
-      discriminator:
-        propertyName: type
-        mapping:
-          CPF: '#/components/schemas/EntryKeyCPF'
-          CNPJ: '#/components/schemas/EntryKeyCNPJ'
-          PHONE: '#/components/schemas/EntryKeyPhone'
-          EMAIL: '#/components/schemas/EntryKeyEmail'
-          EVP: '#/components/schemas/EntryKeyEVP'
-      oneOf:
-        - $ref: '#/components/schemas/EntryKeyCPF'
-        - $ref: '#/components/schemas/EntryKeyCNPJ'
-        - $ref: '#/components/schemas/EntryKeyPhone'
-        - $ref: '#/components/schemas/EntryKeyEmail'
-        - $ref: '#/components/schemas/EntryKeyEVP'
-
-    EntryKeyWithouEVPValue:
-      required:
-        - type
-      allOf:
-        - $ref: '#/components/schemas/EntryKeyBase'
-
-    KeyWithoutEVPValue:
-      type: object
-      description: Chave do pix
-      discriminator:
-        propertyName: type
-        mapping:
-          CPF: '#/components/schemas/EntryKeyCPF'
-          CNPJ: '#/components/schemas/EntryKeyCNPJ'
-          PHONE: '#/components/schemas/EntryKeyPhone'
-          EMAIL: '#/components/schemas/EntryKeyEmail'
-          EVP: '#/components/schemas/EntryKeyWithouEVPValue'
-      oneOf:
-        - $ref: '#/components/schemas/EntryKeyCPF'
-        - $ref: '#/components/schemas/EntryKeyCNPJ'
-        - $ref: '#/components/schemas/EntryKeyPhone'
-        - $ref: '#/components/schemas/EntryKeyEmail'
-        - $ref: '#/components/schemas/EntryKeyWithouEVPValue'
-
-    KeyWithoutEVP:
-      type: object
-      description: Chave do pix
-      discriminator:
-        propertyName: type
-        mapping:
-          CPF: '#/components/schemas/EntryKeyCPF'
-          CNPJ: '#/components/schemas/EntryKeyCNPJ'
-          PHONE: '#/components/schemas/EntryKeyPhone'
-          EMAIL: '#/components/schemas/EntryKeyEmail'
-      oneOf:
-        - $ref: '#/components/schemas/EntryKeyCPF'
-        - $ref: '#/components/schemas/EntryKeyCNPJ'
-        - $ref: '#/components/schemas/EntryKeyPhone'
-        - $ref: '#/components/schemas/EntryKeyEmail'
-
-    EntryId:
+    CurrencyId:
       type: string
       format: UUID-V4
-      description: ID do vínculo
+      description: ID da moeda
       example: 'dbdb6da1-4594-4ad6-b870-3021b927525d'
-
-    EntryCid:
-      type: string
-      description: CID do vínculo
-      example: '28c06eb41c4dc9c3ae114831efcac7446c8747777fca8b145ecd31ff8480ae88'
-
-    Reason:
-      description: >
-        Motivo da remoção:
-          - `USER_REQUESTED`: Usuário solicitou a ação
-          - `CLOSED_BANK_ACCOUNT`: Conta bancária encerrada
-          - `TRANSFERRED_BANK_BRANCH`: Agência bancária transferida
-          - `ENTRY_INACTIVE`: Chave Inativa
-          - `RECONCILIATION`: Reconciliação
-      type: string
-      enum:
-        - USER_REQUESTED
-        - CLOSED_BANK_ACCOUNT
-        - TRANSFERRED_BANK_BRANCH
-        - ENTRY_INACTIVE
-        - RECONCILIATION
-      example: USER_REQUESTED
-
-    ReasonUpdate:
-      description: >
-        Motivo da atualização:
-          - `USER_REQUESTED`: Usuário solicitou a ação
-          - `TRANSFERRED_BANK_BRANCH`: Agência bancária transferida
-          - `RECONCILIATION`: Reconciliação
-      type: string
-      enum:
-        - USER_REQUESTED
-        - TRANSFERRED_BANK_BRANCH
-        - RECONCILIATION
-      example: USER_REQUESTED
-
-    EntryAlreadyExists:
-      type: object
-      properties:
-        code:
-          description: Código do erro
-          type: string
-          example: 'ENTRY_ALREADY_EXISTS'
-        message:
-          description: Mensagem de erro
-          type: string
-          example: 'Entry already exists for this person'
-
-    EntryLimitExceeded:
-      type: object
-      properties:
-        code:
-          description: Código do erro
-          type: string
-          example: 'ENTRY_LIMIT_EXCEEDED'
-        message:
-          description: Mensagem de erro
-          type: string
-          example: 'Entry limit exceeded for this account'
-
-    EntryOwnedByDifferentPerson:
-      type: object
-      properties:
-        code:
-          description: Código do erro
-          type: string
-          example: 'ENTRY_OWNED_BY_DIFFERENT_PERSON'
-        message:
-          description: Mensagem de erro
-          type: string
-          example: 'Entry owned by different person'
-
-    EntryInCustodyOfDifferentParticipant:
-      type: object
-      properties:
-        code:
-          description: Código do erro
-          type: string
-          example: 'ENTRY_IN_CUSTODY_OF_DIFFERENT_PARTICIPANT'
-        message:
-          description: Mensagem de erro
-          type: string
-          example: 'Entry in custody of different participant'
-
-    EntryInCustodyOfDifferentCheckingAccount:
-      type: object
-      properties:
-        code:
-          description: Código do erro
-          type: string
-          example: 'ENTRY_IN_CUSTODY_OF_DIFFERENT_CHECKING_ACCOUNT'
-        message:
-          description: Mensagem de erro
-          type: string
-          example: 'Entry in custody of different checking account'
-
-    EntryLockedByClaim:
-      type: object
-      properties:
-        code:
-          description: Código do erro
-          type: string
-          example: 'ENTRY_LOCKED_BY_CLAIM'
-        message:
-          description: Mensagem de erro
-          type: string
-          example: 'Entry locked by claim'
-
-    EndToEndId:
-      description: Identificador fim-a-fim
-      type: string
-      example: 'E1122334420210102030400000000001'
 
   responses:
     BadRequest:
@@ -1418,41 +229,9 @@ components:
               message:
                 description: Mensagem de erro
                 type: string
-                example: 'Failed to register a claim'
+                example: 'Failed to create a currency'
               details:
                 description: Detalhes do erro
                 type: array
                 example:
-                  - message: 'Unexpected error to register a claim'
-
-    OutOfCuttingTimeError:
-      description: Serviço indisponível
-      content:
-        'application/json':
-          schema:
-            properties:
-              code:
-                description: Código do erro
-                type: string
-                example: 'OUT_OF_CUTTING_TIME'
-              message:
-                description: Mensagem de erro
-                type: string
-                example: 'Service is out of cutting time'
-
-  securitySchemes:
-    Development:
-      type: oauth2
-      description: Autorização em ambiente de desenvolvimento
-      flows:
-        clientCredentials:
-          tokenUrl: https://api.dev.phipagamentos.com/v2/token
-          scopes: {}
-
-    Production:
-      type: oauth2
-      description: Autorização em ambiente de produção
-      flows:
-        clientCredentials:
-          tokenUrl: https://api.phipagamentos.com/v2/token
-          scopes: {}
+                  - message: 'Unexpected error to create a currency'

@@ -2,7 +2,7 @@ import { Channel, Options } from 'amqplib';
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import knex from 'knex';
 
-import { IMessageRepository } from './message';
+import { ICurrencyRepository } from './currency';
 
 /* Http Adapter */
 export interface IHttpAdapterConstructs {
@@ -66,10 +66,9 @@ export interface ISendMessageAdapter {
 
 /* Infrastructure */
 export type Container = {
-  messageRepository: IMessageRepository;
+  currencyRepository: ICurrencyRepository;
 };
 
 export type ContainerConfig = {
   itauFacadeUrl: string;
-  venonSessionName: string;
 };

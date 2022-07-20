@@ -1,19 +1,19 @@
 import { env } from '../util/env';
-import { MessageService } from './service/message';
-import { MessageUseCase } from './useCase/message';
+import { CurrencyService } from './service/currency';
+import { CurrencyUseCase } from './useCase/currency';
 
 import { ContainerConfig, Container } from '../types/core';
 
 export function createContainer(config: ContainerConfig): Container {
   const serviceContext = {
-    messageRepository: config.messageRepository,
+    currencyRepository: config.currencyRepository,
   };
 
   const useCaseContext = {
-    messageService: new MessageService(serviceContext),
+    currencyService: new CurrencyService(serviceContext),
   };
 
   return {
-    messageUseCase: new MessageUseCase(useCaseContext),
+    currencyUseCase: new CurrencyUseCase(useCaseContext),
   };
 }
