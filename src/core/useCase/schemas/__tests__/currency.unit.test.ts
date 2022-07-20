@@ -1,7 +1,6 @@
-import * as Uuid from '@somosphi/uuid';
 import { Chance } from 'chance';
 
-import { addCurrencySchema, updateCurrencySchema, getValueCurrencieschema } from '../currency';
+import { addCurrencySchema } from '../currency';
 
 describe('Use case schema unit tests', () => {
   const chance = new Chance();

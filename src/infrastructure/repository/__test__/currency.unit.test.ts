@@ -1,4 +1,3 @@
-import * as Uuid from '@somosphi/uuid';
 import Chance from 'chance';
 
 import { FailedToSaveCurrency } from '../../../util/error';

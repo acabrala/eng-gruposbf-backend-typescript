@@ -1,4 +1,3 @@
-import * as Uuid from '@somosphi/uuid';
 import Chance from 'chance';
 import httpStatus from 'http-status-codes';
 import { Request } from 'jest-express/lib/request';
